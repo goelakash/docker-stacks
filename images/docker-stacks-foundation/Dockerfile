@@ -26,9 +26,8 @@ RUN apt-get update --yes && \
     #   as the Ubuntu base image is rebuilt too seldom sometimes (less than once a month)
     apt-get upgrade --yes && \
     apt-get install --yes --no-install-recommends \
-    # - bzip2 is necessary to extract the micromamba executable.
-    bzip2 \
     ca-certificates \
+    curl \
     locales \
     # - `netbase` provides /etc/{protocols,rpc,services}, part of POSIX
     #   and required by various C functions like getservbyname and getprotobyname
@@ -38,8 +37,7 @@ RUN apt-get update --yes && \
     # - `tini` is installed as a helpful container entrypoint,
     #   that reaps zombie processes and such of the actual executable we want to start
     #   See https://github.com/krallin/tini#why-tini for details
-    tini \
-    wget && \
+    tini && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
     echo "C.UTF-8 UTF-8" >> /etc/locale.gen && \
@@ -94,48 +92,22 @@ RUN rm -rf "/home/${NB_USER}/.cache/"
 
 USER ${NB_UID}
 
-# Pin the Python version here, or set it to "default"
-ARG PYTHON_VERSION=3.13
 
 # Setup work directory for backward-compatibility
 RUN mkdir "/home/${NB_USER}/work" && \
     fix-permissions "/home/${NB_USER}"
 
-# Download and install Micromamba, and initialize the Conda prefix.
-#   <https://github.com/mamba-org/mamba#micromamba>
-#   Similar projects using Micromamba:
-#     - Micromamba-Docker: <https://github.com/mamba-org/micromamba-docker>
-#     - repo2docker: <https://github.com/jupyterhub/repo2docker>
-# Install Python, Mamba, and jupyter_core
-# Cleanup temporary files and remove Micromamba
-# Correct permissions
-# Do all this in a single RUN command to avoid duplicating all of the
-# files across image layers when the permissions change
+# Install pixi and use it to create the conda environment from the lockfile.
+# This ensures reproducible builds with pinned dependencies.
 COPY --chown="${NB_UID}:${NB_GID}" initial-condarc "${CONDA_DIR}/.condarc"
-WORKDIR /tmp
+COPY --chown="${NB_UID}:${NB_GID}" pixi.toml pixi.lock /tmp/pixi-project/
+WORKDIR /tmp/pixi-project
 RUN set -x && \
-    arch=$(uname -m) && \
-    if [ "${arch}" = "x86_64" ]; then \
-        # Should be simpler, see <https://github.com/mamba-org/mamba/issues/1437>
-        arch="64"; \
-    fi && \
-    # https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html#linux-and-macos
-    wget --progress=dot:giga -O - \
-        "https://micro.mamba.pm/api/micromamba/linux-${arch}/latest" | tar -xvj bin/micromamba && \
-    PYTHON_SPECIFIER="python=${PYTHON_VERSION}" && \
-    if [[ "${PYTHON_VERSION}" == "default" ]]; then PYTHON_SPECIFIER="python"; fi && \
-    # Install the packages
-    ./bin/micromamba install \
-        --root-prefix="${CONDA_DIR}" \
-        --prefix="${CONDA_DIR}" \
-        --yes \
-        'jupyter_core' \
-        'conda' \
-        'mamba' \
-        "${PYTHON_SPECIFIER}" && \
-    rm -rf /tmp/bin/ && \
-    # Pin major.minor version of python
-    # https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
+    curl -fsSL https://pixi.sh/install.sh | bash && \
+    export PATH="$HOME/.pixi/bin:$PATH" && \
+    pixi install --manifest-path /tmp/pixi-project/pixi.toml && \
+    cp -a /tmp/pixi-project/.pixi/envs/default/* "${CONDA_DIR}/" && \
+    rm -rf /tmp/pixi-project "$HOME/.pixi" && \
     mamba list --full-name 'python' | awk 'END{sub("[^.]*$", "*", $2); print $1 " " $2}' >> "${CONDA_DIR}/conda-meta/pinned" && \
     mamba clean --all -f -y && \
     fix-permissions "${CONDA_DIR}" && \
