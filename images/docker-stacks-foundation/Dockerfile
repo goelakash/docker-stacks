@@ -68,6 +68,12 @@ RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashr
     # and docs: https://docs.conda.io/projects/conda/en/latest/dev-guide/deep-dives/activation.html
     echo 'eval "$(conda shell.bash hook)"' >> /etc/skel/.bashrc
 
+# Also enable terminal colors system-wide so they survive when an external
+# home directory is mounted (e.g. by JupyterHub) and overwrites ~/.bashrc.
+# More info: https://github.com/jupyter/docker-stacks/issues/815
+COPY bash-colors.sh /etc/bash-colors.sh
+RUN echo 'source /etc/bash-colors.sh' >> /etc/bash.bashrc
+
 # Delete existing user with UID="${NB_UID}" if it exists
 # hadolint ignore=SC2046
 RUN if grep -q "${NB_UID}" /etc/passwd; then \
