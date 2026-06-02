@@ -69,6 +69,10 @@ def pytorch_tagger(container: Container) -> str:
     return "pytorch-" + _get_pip_package_version(container, "torch").split("+")[0]
 
 
+def jax_tagger(container: Container) -> str:
+    return "jax-" + _get_pip_package_version(container, "jax")
+
+
 def spark_tagger(container: Container) -> str:
     SPARK_VERSION_LINE_PREFIX = r"   /___/ .__/\_,_/_/ /_/\_\   version"
 

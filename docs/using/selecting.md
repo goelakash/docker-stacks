@@ -209,6 +209,19 @@ It contains:
 - Everything in `jupyter/scipy-notebook` and its ancestor images
 - [pytorch](https://pytorch.org/) machine learning library
 
+### jupyter/jax-notebook
+
+[Source on GitHub](https://github.com/jupyter/docker-stacks/tree/main/images/jax-notebook) |
+[Dockerfile commit history](https://github.com/jupyter/docker-stacks/commits/main/images/jax-notebook/Dockerfile) |
+[Quay.io image tags](https://quay.io/repository/jupyter/jax-notebook?tab=tags)
+
+`jupyter/jax-notebook` includes JAX and the most common neural-network libraries built on it.
+
+- Everything in `jupyter/scipy-notebook` and its ancestor images
+- [jax](https://docs.jax.dev/) — composable transformations of Python and NumPy programs
+- [flax](https://flax.readthedocs.io/) — neural network library for JAX
+- [optax](https://optax.readthedocs.io/) — gradient processing and optimization for JAX
+
 ### jupyter/datascience-notebook
 
 [Source on GitHub](https://github.com/jupyter/docker-stacks/tree/main/images/datascience-notebook) |
@@ -252,7 +265,7 @@ It contains:
 
 ### CUDA enabled variants
 
-We provide CUDA accelerated versions of the `pytorch-notebook` and `tensorflow-notebook` images.
+We provide CUDA accelerated versions of the `pytorch-notebook`, `tensorflow-notebook`, and `jax-notebook` images.
 Prepend a CUDA prefix (versioned prefix like `cuda12-` for `pytorch-notebook` or just `cuda-` for `tensorflow-notebook`) to the image tag
 to allow PyTorch or TensorFlow operations to use compatible NVIDIA GPUs for accelerated computation.
 We only build `pytorch-notebook` for the last two major versions of CUDA.

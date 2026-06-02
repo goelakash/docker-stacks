@@ -62,6 +62,9 @@ ALL_IMAGES = {
     "pytorch-notebook": ImageDescription(
         parent_image="scipy-notebook", taggers=[versions.python_tagger]
     ),
+    "jax-notebook": ImageDescription(
+        parent_image="scipy-notebook", taggers=[versions.jax_tagger]
+    ),
     "datascience-notebook": ImageDescription(
         parent_image="scipy-notebook",
         taggers=[versions.r_tagger, versions.julia_tagger],
